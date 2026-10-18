@@ -1,0 +1,25 @@
+@startuml StateQuestPoint
+[*] --> Locked : квест не начат
+Locked --> Available : квест активирован
+Available --> Scanning : пользователь открыл точку
+
+Scanning --> QRVerified : QR корректен
+Scanning --> Fallback : камера недоступна (A1)
+Scanning --> Blocked : 3 ошибки подряд
+
+Fallback --> QRVerified : резервный код верен
+Fallback --> Scanning : код неверен
+
+QRVerified --> GeoCheck : requiresGeoCheck = true
+QRVerified --> Answering : requiresGeoCheck = false
+
+GeoCheck --> Answering : пользователь в радиусе ≤ 50 м
+GeoCheck --> GeoFailed : вне радиуса / нет GPS (E2)
+GeoFailed --> GeoCheck : пользователь подошёл ближе
+
+Answering --> Completed : ответ дан
+Completed --> [*] : точка засчитана
+
+Blocked --> Scanning : истекло 5 минут
+Blocked --> [*] : обращение к куратору
+@enduml
