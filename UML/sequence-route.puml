@@ -1,0 +1,50 @@
+@startuml SeqRoute
+actor "Первокурсник" as User
+boundary "Клиентское приложение" as App
+control "Сервис геолокации" as Geo
+control "Сервис маршрутизации" as Router
+database "База кампуса" as DB
+
+User -> App : Открыть «Карта кампуса»
+App -> DB : GET /map + buildings
+DB --> App : Карта, корпуса, аудитории
+App --> User : Показать карту, поиск, фильтры
+
+User -> App : Выбрать корпус / ввести аудиторию
+App -> DB : Проверить наличие объекта
+alt Объект найден
+  DB --> App : 200 OK
+  User -> App : Способ старта (авто / ручной)
+  alt Автоматический старт
+    App -> Geo : Запросить разрешение + координаты
+    alt Геолокация доступна
+      Geo --> App : (lat, lon)
+      App -> Router : POST /route (start, end)
+      Router --> App : Маршрут, шаги, время, ориентиры
+    else Геолокация недоступна (A1)
+      Geo --> App : deny / disabled
+      App --> User : «Автостарт недоступен»
+      User -> App : Выбрать старт вручную
+      App -> Router : POST /route
+      Router --> App : Маршрут
+    end
+  else Ручной старт
+    User -> App : Точка старта из списка
+    App -> Router : POST /route
+    Router --> App : Маршрут
+  end
+  App --> User : Маршрут, расстояние, время, ориентиры
+  User -> App : «В путь»
+  loop Каждые ≤ 2 с
+    App -> Geo : getCurrentPosition()
+    Geo --> App : (lat, lon)
+    App --> User : Подсказка + позиция
+  end
+  App --> User : «Вы на месте»
+  App -> DB : POST /profile/visit
+else Объект не найден (E1)
+  DB --> App : 404 Not Found
+  App --> User : «Объект не найден»
+  App -> DB : POST /admin/notify (query, userId, ts, mapVersion)
+end
+@enduml
