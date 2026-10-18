@@ -1,112 +1,219 @@
-@startuml Classes
+@startuml Классы_на_русском
 skinparam classAttributeIconSize 0
 hide empty members
 
-enum UserRole { STUDENT\nADMIN\nCURATOR }
-enum RouteStatus { BUILDING\nREADY\nNAVIGATING\nCOMPLETED\nFAILED }
-enum QuestPointStatus { LOCKED\nAVAILABLE\nSCANNING\nGEO_CHECK\nANSWERING\nCOMPLETED\nBLOCKED }
-enum LandmarkType { ENTRANCE\nSTAIRS\nELEVATOR\nPASSAGE }
+enum РольПользователя {
+  СТУДЕНТ
+  АДМИНИСТРАТОР
+  КУРАТОР
+}
 
-class User {
+enum СтатусМаршрута {
+  ПОСТРОЕНИЕ
+  ГОТОВ
+  НАВИГАЦИЯ
+  ЗАВЕРШЕН
+  ОШИБКА
+}
+
+enum СтатусТочкиКвеста {
+  ЗАБЛОКИРОВАНА
+  ДОСТУПНА
+  СКАНИРОВАНИЕ
+  ГЕОПРОВЕРКА
+  ОТВЕТ_НА_ВОПРОС
+  ПРОЙДЕНА
+  БЛОКИРОВКА_5_МИН
+}
+
+class Пользователь {
   - id: UUID
-  - email: string
-  - fullName: string
-  - role: UserRole
-  - guestMode: boolean
-  + getProfile(): Profile
+  - почта: string
+  - ФИО: string
+  - роль: РольПользователя
+  - гостевойРежим: boolean
+  + получитьПрофиль(): Профиль
 }
-class Profile {
-  - userId: UUID
-  - startPoint: string
-  - destination: string
-  - routeBuildTime: Date
-  - visitedPoints: PointVisit[]
-  + saveVisit(v: PointVisit): void
-}
-class PointVisit { - pointId: UUID\n- visitedAt: Date }
 
-class CampusMap {
+class Профиль {
+  - idПользователя: UUID
+  - точкаСтарта: string
+  - точкаНазначения: string
+  - времяПостроенияМаршрута: Date
+  - посещенныеТочки: ПосещениеТочки[]
+  + сохранитьПосещение(в: ПосещениеТочки): void
+}
+
+class ПосещениеТочки {
+  - idТочки: UUID
+  - времяПосещения: Date
+}
+
+class КартаКампуса {
   - id: UUID
-  - version: string
-  - updatedAt: Date
-  + findBuilding(q: string): Building[]
-  + findRoom(n: string): Room
+  - версия: string
+  - датаОбновления: Date
+  + найтиКорпус(запрос: string): Корпус[]
+  + найтиАудиторию(номер: string): Аудитория
 }
-class Building { - id: UUID\n- name: string\n- address: string\n- coordinates: GeoPoint }
-class Room { - id: UUID\n- number: string\n- floor: int\n- buildingId: UUID }
-class GeoPoint { - latitude: double\n- longitude: double }
 
-class Route {
+class Корпус {
   - id: UUID
-  - startPoint: GeoPoint
-  - endPoint: GeoPoint
-  - distance: double
-  - estimatedTime: int
-  - status: RouteStatus
-  + buildRoute(s: GeoPoint, e: GeoPoint): Route
-  + getSteps(): RouteStep[]
+  - название: string
+  - адрес: string
+  - координаты: ГеоТочка
 }
-class RouteStep { - order: int\n- instruction: string }
-class Landmark { - type: LandmarkType\n- name: string\n- position: GeoPoint }
-class NavigationSession {
+
+class Аудитория {
   - id: UUID
-  - routeId: UUID
-  - startedAt: Date
-  - position: GeoPoint
-  + updatePosition(g: GeoPoint): void
+  - номер: string
+  - этаж: int
+  - idКорпуса: UUID
 }
 
-class ConstitutionContent {
-  - version: string
-  - hash: string
-  - lastUpdated: Date
-  + isActual(): boolean
-  + getTableOfContents(): Section[]
+class ГеоТочка {
+  - широта: double
+  - долгота: double
 }
-class Section { - id: UUID\n- title: string\n- content: string\n- relatedArticles: string[] }
-class KnowledgeBase { + search(q: string): SearchResult[] }
-class SearchResult { - articleId: UUID\n- snippet: string\n- relevance: double }
 
-class Quiz { - id: UUID\n- title: string\n+ checkAnswer(qId, opt): boolean }
-class QuizQuestion { - id: UUID\n- text: string\n- options: string[]\n- correctOption: int\n- explanation: string }
-class QuizResult { - id: UUID\n- score: int\n- completedAt: Date }
-
-class Quest { - id: UUID\n- title: string\n- active: boolean }
-class QuestPoint { - id: UUID\n- title: string\n- position: GeoPoint\n- requiresGeoCheck: boolean\n- qrCode: string\n- status: QuestPointStatus }
-class QuestProgress {
+class Маршрут {
   - id: UUID
-  - visitedPointIds: UUID[]
-  - errors: int
-  - startedAt: Date
-  - completedAt: Date
-  + markPoint(id: UUID): void
-  + saveLocally(): void
-  + sync(): Promise<void>
+  - старт: ГеоТочка
+  - финиш: ГеоТочка
+  - расстояние: double
+  - времяВПути: int
+  - статус: СтатусМаршрута
+  + построитьМаршрут(с: ГеоТочка, по: ГеоТочка): Маршрут
+  + получитьШаги(): ШагМаршрута[]
 }
-class Achievement { - id: UUID\n- title: string\n- description: string\n- awardedAt: Date }
 
-class QRVerificationService { + verify(code: string, pointId: UUID): boolean }
-class NotificationService { + notifyAdmin(p: AdminNotification): void }
-class AdminNotification { - query: string\n- userId: UUID\n- timestamp: Date\n- mapVersion: string }
+class ШагМаршрута {
+  - порядок: int
+  - инструкция: string
+}
 
-User "1" --> "1" Profile
-User --> UserRole
-CampusMap "1" *-- "many" Building
-Building "1" *-- "many" Room
-Building --> GeoPoint
-Route --> RouteStatus
-Route "1" *-- "many" RouteStep
-RouteStep --> Landmark
-NavigationSession --> Route
-ConstitutionContent "1" *-- "many" Section
-KnowledgeBase ..> SearchResult
-Quiz "1" *-- "many" QuizQuestion
-QuizResult --> Quiz
-QuizResult --> User
-Quest "1" *-- "many" QuestPoint
-QuestPoint --> QuestPointStatus
-QuestProgress --> Quest
-QuestProgress --> User
-QuestProgress --> QuestPoint
-Achievement --> User
+class Ориентир {
+  - тип: ТипОриентира
+  - название: string
+  - позиция: ГеоТочка
+}
+
+class СессияНавигации {
+  - id: UUID
+  - idМаршрута: UUID
+  - времяСтарта: Date
+  - позиция: ГеоТочка
+  + обновитьПозицию(г: ГеоТочка): void
+}
+
+class КонтентУстава {
+  - версия: string
+  - хэш: string
+  - датаОбновления: Date
+  + актуален(): boolean
+  + получитьОглавление(): Раздел[]
+}
+
+class Раздел {
+  - id: UUID
+  - заголовок: string
+  - текст: string
+}
+
+class БазаЗнаний {
+  + поиск(запрос: string): РезультатПоиска[]
+}
+
+class РезультатПоиска {
+  - idСтатьи: UUID
+  - фрагмент: string
+  - релевантность: double
+}
+
+class МиниТест {
+  - id: UUID
+  - название: string
+  + проверитьОтвет(idВопроса, вариант): boolean
+}
+
+class ВопросТеста {
+  - id: UUID
+  - текст: string
+  - варианты: string[]
+  - правильныйВариант: int
+  - пояснение: string
+}
+
+class РезультатТеста {
+  - id: UUID
+  - баллы: int
+  - датаПрохождения: Date
+}
+
+class Квест {
+  - id: UUID
+  - название: string
+  - активен: boolean
+}
+
+class ТочкаКвеста {
+  - id: UUID
+  - название: string
+  - позиция: ГеоТочка
+  - нужнаГеопроверка: boolean
+  - QRкод: string
+  - статус: СтатусТочкиКвеста
+}
+
+class ПрогрессКвеста {
+  - id: UUID
+  - пройденныеТочки: UUID[]
+  - ошибки: int
+  + отметитьТочку(id: UUID): void
+  + сохранитьЛокально(): void
+  + синхронизировать(): Promise<void>
+}
+
+class Достижение {
+  - id: UUID
+  - название: string
+  - описание: string
+  - датаВыдачи: Date
+}
+
+class СервисПроверкиQR {
+  + проверить(код: string, idТочки: UUID): boolean
+}
+
+class СервисУведомлений {
+  + уведомитьАдмина(у: Уведомление): void
+}
+
+class Уведомление {
+  - запрос: string
+  - idПользователя: UUID
+  - время: Date
+  - версияКарты: string
+}
+
+Пользователь "1" --> "1" Профиль
+Пользователь --> РольПользователя
+КартаКампуса "1" *-- "many" Корпус
+Корпус "1" *-- "many" Аудитория
+Корпус --> ГеоТочка
+Маршрут --> СтатусМаршрута
+Маршрут "1" *-- "many" ШагМаршрута
+ШагМаршрута --> Ориентир
+СессияНавигации --> Маршрут
+КонтентУстава "1" *-- "many" Раздел
+БазаЗнаний ..> РезультатПоиска
+МиниТест "1" *-- "many" ВопросТеста
+РезультатТеста --> МиниТест
+РезультатТеста --> Пользователь
+Квест "1" *-- "many" ТочкаКвеста
+ТочкаКвеста --> СтатусТочкиКвеста
+ПрогрессКвеста --> Квест
+ПрогрессКвеста --> Пользователь
+ПрогрессКвеста --> ТочкаКвеста
+Достижение --> Пользователь
 @enduml
