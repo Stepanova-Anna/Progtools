@@ -1,0 +1,60 @@
+@startuml UC
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Первокурсник" as Student
+actor "Администратор карт/контента" as Admin
+actor "Куратор квеста" as Curator
+actor "Сервис геолокации" as Geo
+actor "База знаний / поиск" as KB
+actor "Система проверки QR" as QR
+
+rectangle "Герцен-Quest — игровой веб-ресурс адаптации" {
+
+  usecase "UC-01\nНавигация по кампусу" as UC1
+  usecase "Построить маршрут" as UC1a
+  usecase "Запустить режим\nсопровождения «В путь»" as UC1b
+  usecase "Ручной выбор\nточки старта" as UC1c
+  usecase "Сохранить посещение\nв профиль" as UC1d
+
+  usecase "UC-02\nИзучение Устава" as UC2
+  usecase "Найти пункт\nв базе знаний" as UC2a
+  usecase "Пройти мини-тест" as UC2b
+  usecase "Получить достижение\n«Знаток Устава»" as UC2c
+
+  usecase "UC-03\nКвест первокурсника" as UC3
+  usecase "Отсканировать QR-код" as UC3a
+  usecase "Ввести резервный код" as UC3b
+  usecase "Геопроверка (≤ 50 м)" as UC3c
+  usecase "Начислить баллы\nи выдать достижение" as UC3d
+  usecase "Отправить отчёт\nкуратору" as UC3e
+
+  usecase "Управление картой\nи контентом" as UCA
+  usecase "Уведомление об\nотсутствующем объекте" as UCA1
+  usecase "Управление квестом" as UCC
+}
+
+Student --> UC1
+Student --> UC2
+Student --> UC3
+Admin --> UCA
+Curator --> UCC
+
+UC1 ..> UC1a : <<include>>
+UC1 ..> UC1b : <<include>>
+UC1 ..> UC1c : <<extend>> : геолокация недоступна
+UC1 ..> UC1d : <<include>>
+UC2 ..> UC2a : <<include>>
+UC2 ..> UC2b : <<extend>>
+UC2 ..> UC2c : <<include>>
+UC3 ..> UC3a : <<include>>
+UC3 ..> UC3b : <<extend>> : камера недоступна
+UC3 ..> UC3c : <<include>>
+UC3 ..> UC3d : <<include>>
+UC3 ..> UC3e : <<include>>
+UCA ..> UCA1 : <<include>>
+
+UC1 --> Geo
+UC2 --> KB
+UC3 --> QR
+@enduml
