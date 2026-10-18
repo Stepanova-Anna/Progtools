@@ -1,0 +1,112 @@
+@startuml Classes
+skinparam classAttributeIconSize 0
+hide empty members
+
+enum UserRole { STUDENT\nADMIN\nCURATOR }
+enum RouteStatus { BUILDING\nREADY\nNAVIGATING\nCOMPLETED\nFAILED }
+enum QuestPointStatus { LOCKED\nAVAILABLE\nSCANNING\nGEO_CHECK\nANSWERING\nCOMPLETED\nBLOCKED }
+enum LandmarkType { ENTRANCE\nSTAIRS\nELEVATOR\nPASSAGE }
+
+class User {
+  - id: UUID
+  - email: string
+  - fullName: string
+  - role: UserRole
+  - guestMode: boolean
+  + getProfile(): Profile
+}
+class Profile {
+  - userId: UUID
+  - startPoint: string
+  - destination: string
+  - routeBuildTime: Date
+  - visitedPoints: PointVisit[]
+  + saveVisit(v: PointVisit): void
+}
+class PointVisit { - pointId: UUID\n- visitedAt: Date }
+
+class CampusMap {
+  - id: UUID
+  - version: string
+  - updatedAt: Date
+  + findBuilding(q: string): Building[]
+  + findRoom(n: string): Room
+}
+class Building { - id: UUID\n- name: string\n- address: string\n- coordinates: GeoPoint }
+class Room { - id: UUID\n- number: string\n- floor: int\n- buildingId: UUID }
+class GeoPoint { - latitude: double\n- longitude: double }
+
+class Route {
+  - id: UUID
+  - startPoint: GeoPoint
+  - endPoint: GeoPoint
+  - distance: double
+  - estimatedTime: int
+  - status: RouteStatus
+  + buildRoute(s: GeoPoint, e: GeoPoint): Route
+  + getSteps(): RouteStep[]
+}
+class RouteStep { - order: int\n- instruction: string }
+class Landmark { - type: LandmarkType\n- name: string\n- position: GeoPoint }
+class NavigationSession {
+  - id: UUID
+  - routeId: UUID
+  - startedAt: Date
+  - position: GeoPoint
+  + updatePosition(g: GeoPoint): void
+}
+
+class ConstitutionContent {
+  - version: string
+  - hash: string
+  - lastUpdated: Date
+  + isActual(): boolean
+  + getTableOfContents(): Section[]
+}
+class Section { - id: UUID\n- title: string\n- content: string\n- relatedArticles: string[] }
+class KnowledgeBase { + search(q: string): SearchResult[] }
+class SearchResult { - articleId: UUID\n- snippet: string\n- relevance: double }
+
+class Quiz { - id: UUID\n- title: string\n+ checkAnswer(qId, opt): boolean }
+class QuizQuestion { - id: UUID\n- text: string\n- options: string[]\n- correctOption: int\n- explanation: string }
+class QuizResult { - id: UUID\n- score: int\n- completedAt: Date }
+
+class Quest { - id: UUID\n- title: string\n- active: boolean }
+class QuestPoint { - id: UUID\n- title: string\n- position: GeoPoint\n- requiresGeoCheck: boolean\n- qrCode: string\n- status: QuestPointStatus }
+class QuestProgress {
+  - id: UUID
+  - visitedPointIds: UUID[]
+  - errors: int
+  - startedAt: Date
+  - completedAt: Date
+  + markPoint(id: UUID): void
+  + saveLocally(): void
+  + sync(): Promise<void>
+}
+class Achievement { - id: UUID\n- title: string\n- description: string\n- awardedAt: Date }
+
+class QRVerificationService { + verify(code: string, pointId: UUID): boolean }
+class NotificationService { + notifyAdmin(p: AdminNotification): void }
+class AdminNotification { - query: string\n- userId: UUID\n- timestamp: Date\n- mapVersion: string }
+
+User "1" --> "1" Profile
+User --> UserRole
+CampusMap "1" *-- "many" Building
+Building "1" *-- "many" Room
+Building --> GeoPoint
+Route --> RouteStatus
+Route "1" *-- "many" RouteStep
+RouteStep --> Landmark
+NavigationSession --> Route
+ConstitutionContent "1" *-- "many" Section
+KnowledgeBase ..> SearchResult
+Quiz "1" *-- "many" QuizQuestion
+QuizResult --> Quiz
+QuizResult --> User
+Quest "1" *-- "many" QuestPoint
+QuestPoint --> QuestPointStatus
+QuestProgress --> Quest
+QuestProgress --> User
+QuestProgress --> QuestPoint
+Achievement --> User
+@enduml
