@@ -18,7 +18,7 @@
 ### 2. Диаграмма классов (Class)
 Статическая структура данных. По данной диаграмме сгенерирован код на TypeScript для frontend/backend.
 
-![Class Diagram](./classes.png)
+![Class Diagram](./classes.png0)
 
 🔗 [Ссылка на код](./classes.puml)
 
