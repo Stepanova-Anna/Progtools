@@ -51,4 +51,8 @@
 
 ---
 
+### Примерный интерфейс для телефона
+
+<img width="842" height="360" alt="image" src="https://github.com/user-attachments/assets/a81d55b1-4232-4d89-a54e-3141a5554c9d" />
+
 
